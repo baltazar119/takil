@@ -1,33 +1,47 @@
-import { PrismaClient } from '@/generated/prisma'
-import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
+import { NextResponse } from 'next/server'
 
 const prisma = new PrismaClient()
 
-// ✅ Kayıt ekleme
-export async function POST(req: NextRequest) {
-  const data = await req.json()
-  const count = await prisma.user.count()
+export async function GET() {
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: {
+        createdAt: 'asc',
+      },
+    })
 
-  let role = 'yedek'
-  if (count < 20) role = 'asil'
-  else if (count >= 25)
-    return NextResponse.json({ message: 'Kontenjan dolu' }, { status: 400 })
-
-  const user = await prisma.user.create({
-    data: {
-      name: data.name,
-      email: data.email,
-      role
-    }
-  })
-
-  return NextResponse.json({ user })
+    return NextResponse.json({ users })
+  } catch (error) {
+    console.error('Veritabanı sorgusunda hata:', error)
+    return NextResponse.json({ users: [], error: 'Veri alınamadı' }, { status: 500 })
+  }
 }
 
-// ✅ Tüm kayıtları çekme
-export async function GET() {
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: 'asc' }
-  })
-  return NextResponse.json({ users })
+export async function POST(req: Request) {
+  try {
+    const body = await req.json()
+    const { name, email } = body
+
+    if (!name || !email) {
+      return NextResponse.json({ error: 'Ad ve e-posta zorunludur.' }, { status: 400 })
+    }
+
+    const count = await prisma.user.count()
+
+    const role = count < 20 ? 'asil' : count < 25 ? 'yedek' : 'beklemede'
+
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        role,
+      },
+    })
+
+    return NextResponse.json({ user: newUser })
+  } catch (error) {
+    console.error('Kayıt sırasında hata oluştu:', error)
+    return NextResponse.json({ error: 'Kayıt işlemi başarısız.' }, { status: 500 })
+  }
 }

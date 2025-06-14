@@ -26,7 +26,9 @@ export default function AdminPage() {
         .then(res => res.json())
         .then(data => {
           setUsers(data.users || [])
-          console.log('Gelen kullanıcılar:', data.users)
+        })
+        .catch(() => {
+          setError('Veri alınırken hata oluştu.')
         })
     }
   }, [loggedIn])
@@ -101,9 +103,11 @@ export default function AdminPage() {
                   })}
                 </td>
                 <td className="px-4 py-2">
-                  <span className={`px-2 py-1 rounded-full text-xs text-white ${
-                    user.role === 'asil' ? 'bg-green-600' : 'bg-yellow-600'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs text-white ${
+                      user.role === 'asil' ? 'bg-green-600' : 'bg-yellow-600'
+                    }`}
+                  >
                     {user.role.toUpperCase()}
                   </span>
                 </td>
